@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hindu Oracle</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-dim: #8a6f2e;
+    --deep: #0a0705;
+    --surface: #120e09;
+    --surface2: #1c1510;
+    --surface3: #251c14;
+    --text: #e8dcc8;
+    --text-dim: #9a8a72;
+    --saffron: #d4621a;
+    --crimson: #8b1a1a;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--deep);
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+    overflow-x: hidden;
+  }
+
+  /* ── Grain overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.4;
+  }
+
+  /* ── Ambient glow ── */
+  .ambient {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .ambient-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+    top: -200px; left: 50%; transform: translateX(-50%);
+    animation: breathe 8s ease-in-out infinite;
+  }
+  .ambient-2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(212,98,26,0.06) 0%, transparent 70%);
+    bottom: 0; right: -100px;
+    animation: breathe 10s ease-in-out infinite reverse;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+    50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+  }
+
+  /* ── Layout ── */
+  .app {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+    animation: fadeDown 1.2s ease both;
+  }
+
+  .om-symbol {
+    font-size: 48px;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 20px rgba(201,168,76,0.4));
+    animation: pulseGlow 4s ease-in-out infinite;
+  }
+  @keyframes pulseGlow {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(201,168,76,0.4)); }
+    50% { filter: drop-shadow(0 0 40px rgba(201,168,76,0.7)); }
+  }
+
+  .title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    line-height: 1.1;
+    text-shadow: 0 0 60px rgba(201,168,76,0.3);
+  }
+
+  .subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: var(--text-dim);
+    margin-top: 12px;
+    text-transform: uppercase;
+  }
+
+  .divider-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+    justify-content: center;
+  }
+  .divider-line::before, .divider-line::after {
+    content: '';
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim));
+  }
+  .divider-line::after {
+    background: linear-gradient(90deg, var(--gold-dim), transparent);
+  }
+  .divider-diamond {
+    width: 6px; height: 6px;
+    background: var(--gold);
+    transform: rotate(45deg);
+  }
+
+  /* ── Main card ── */
+  .oracle-card {
+    width: 100%;
+    max-width: 760px;
+    background: var(--surface);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 2px;
+    padding: 48px;
+    position: relative;
+    animation: fadeUp 1.4s ease both 0.3s;
+    box-shadow:
+      0 0 0 1px rgba(201,168,76,0.05),
+      0 40px 80px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(201,168,76,0.1);
+  }
+
+  /* Corner ornaments */
+  .oracle-card::before, .oracle-card::after {
+    content: '';
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: var(--gold-dim);
+    border-style: solid;
+  }
+  .oracle-card::before {
+    top: 12px; left: 12px;
+    border-width: 1px 0 0 1px;
+  }
+  .oracle-card::after {
+    bottom: 12px; right: 12px;
+    border-width: 0 1px 1px 0;
+  }
+
+  /* ── Scripture display ── */
+  .scripture-area {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 24px;
+    border: 1px solid rgba(201,168,76,0.08);
+    background: rgba(0,0,0,0.3);
+    position: relative;
+    margin-bottom: 40px;
+    border-radius: 1px;
+  }
+
+  .scripture-idle {
+    transition: opacity 0.5s ease;
+  }
+  .scripture-idle .idle-text {
+    font-style: italic;
+    font-size: 20px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    max-width: 440px;
+  }
+  .scripture-idle .idle-source {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--gold-dim);
+    margin-top: 16px;
+    text-transform: uppercase;
+  }
+
+  .response-area {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    text-align: left;
+  }
+  .response-area.visible { display: flex; }
+
+  .question-display {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+  }
+  .question-display span {
+    color: var(--text-dim);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    letter-spacing: 0.05em;
+    text-transform: none;
+    display: block;
+    margin-top: 6px;
+  }
+
+  .answer-text {
+    font-size: 20px;
+    line-height: 1.85;
+    color: var(--text);
+    font-weight: 300;
+  }
+
+  .answer-source {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  /* ── Loading state ── */
+  .loading-area {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .loading-area.visible { display: flex; }
+
+  .mandala-loader {
+    width: 56px; height: 56px;
+    position: relative;
+  }
+  .mandala-loader::before, .mandala-loader::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid transparent;
+  }
+  .mandala-loader::before {
+    border-top-color: var(--gold);
+    border-right-color: var(--gold);
+    animation: spin 1.4s linear infinite;
+  }
+  .mandala-loader::after {
+    border-bottom-color: var(--gold-dim);
+    border-left-color: var(--gold-dim);
+    animation: spin 1.4s linear infinite reverse;
+    inset: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+  /* ── Controls ── */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .send-btn {
+    background: rgba(201,168,76,0.1);
+    border: none;
+    cursor: pointer;
+    color: var(--gold);
+    font-size: 18px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .send-btn:hover {
+    background: rgba(201,168,76,0.2);
+    color: var(--gold-light);
+  }
+
+  /* ── Audio player ── */
+  .audio-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(201,168,76,0.05);
+    border: 1px solid rgba(201,168,76,0.1);
+    margin-top: 8px;
+  }
+  .audio-bar.visible { display: flex; }
+
+  .play-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(201,168,76,0.3);
+    background: rgba(201,168,76,0.1);
+    color: var(--gold);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+  .play-btn:hover { background: rgba(201,168,76,0.2); }
+
+  .audio-progress {
+    flex: 1;
+    height: 2px;
+    background: rgba(201,168,76,0.15);
+    position: relative;
+    cursor: pointer;
+  }
+  .audio-fill {
+    height: 100%;
+    background: var(--gold);
+    width: 0%;
+  }
+
+  .audio-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 48px;
+    text-align: center;
+    animation: fadeUp 1.6s ease both 0.6s;
+  }
+  .footer-text {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--text-dim);
+    opacity: 0.4;
+    text-transform: uppercase;
+  }
+
+  /* ── Status toast ── */
+  .status-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface3);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 10px 24px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    transition: transform 0.4s ease;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .status-toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--deep); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+
+<div class="app">
+  <header class="header">
+    <span class="om-symbol">ॐ</span>
+    <h1 class="title">The Hindu Oracle</h1>
+    <p class="subtitle">Wisdom of the Bhagavad Gita &amp; 108 Upanishads</p>
+    <div class="divider-line"><div class="divider-diamond"></div></div>
+  </header>
+
+  <main class="oracle-card">
+    <div class="scripture-area" id="scriptureArea">
+      <div class="scripture-idle" id="idleState">
+        <p class="idle-text">"The soul is never born nor dies at any time. It has not come into being, does not come into being, and will not come into being. It is unborn, eternal, ever-existing, and primeval."</p>
+        <p class="idle-source">Bhagavad Gita · Chapter 2, Verse 20</p>
+      </div>
+
+      <div class="loading-area" id="loadingState">
+        <div class="mandala-loader"></div>
+        <p class="loading-text">Consulting the scriptures</p>
+      </div>
+
+      <div class="response-area" id="responseArea">
+        <div class="question-display">
+          Your question <span id="questionDisplay"></span>
+        </div>
+        <p class="answer-text" id="answerText"></p>
+        <p class="answer-source" id="answerSource">— The Oracle</p>
+      </div>
+    </div>
+
+    <div class="audio-bar" id="audioBar">
+      <button class="play-btn" id="playBtn" onclick="toggleAudio()">⏸</button>
+      <div class="audio-progress">
+        <div class="audio-fill" id="audioFill"></div>
+      </div>
+      <span class="audio-label">Oracle speaks</span>
+    </div>
+
+    <div class="controls">
+      <div style="display: flex; gap: 16px; margin-bottom: 20px; justify-content: center;">
+        <button id="startSessionBtn" class="send-btn" style="border: 1px solid var(--gold); border-radius: 4px; padding: 10px 20px;" onclick="startSession()">
+          Awaken the Oracle
+        </button>
+        <button id="endSessionBtn" class="send-btn" style="display: none; border: 1px solid var(--crimson); color: var(--crimson); border-radius: 4px; padding: 10px 20px;" onclick="endSession()">
+          End Session
+        </button>
+      </div>
+
+      <div id="transcriptArea" style="display: none; text-align: center; margin-top: 10px;">
+        <p id="micStatus" style="color: var(--gold); font-size: 0.9em; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;"></p>
+        <p id="userTranscript" style="color: #fff; font-style: italic; font-size: 1.1em;"></p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p class="footer-text">Grounded in scripture · Powered by Gemini &amp; Nvidia Magpie</p>
+  </footer>
+</div>
+
+<div class="status-toast" id="statusToast"></div>
+
+
+<audio id="oracleAudio" onended="onAudioEnd()" ontimeupdate="updateProgress()"></audio>
+
+
+<script>
+  let isListening = false;
+  let recognition = null;
+  let sessionActive = false; 
+  let isOracleSpeaking = false; 
+
+  function startSession() {
+    sessionActive = true;
+    document.getElementById('startSessionBtn').style.display = 'none';
+    document.getElementById('endSessionBtn').style.display = 'flex';
+    
+    const introMsg = "Namaste. I am a vessel of ancient wisdom. Ask me of the dharma, the soul, or the path to liberation.";
+    showAnswer("Who is there?", introMsg, "The Oracle's Sanctum");
+    
+    // Route the intro text directly through your Magpie backend endpoint
+    playAudio(`/tts?text=${encodeURIComponent(introMsg)}`);
+  }
+
+  function endSession() {
+    sessionActive = false;
+    stopListening();
+    
+    // Correctly stop the <audio> element
+    const audio = document.getElementById('oracleAudio');
+    audio.pause();
+    audio.currentTime = 0;
+    
+    document.getElementById('startSessionBtn').style.display = 'flex';
+    document.getElementById('endSessionBtn').style.display = 'none';
+    
+    // Reset the UI
+    showToast("Session Ended. The Oracle slumbers.");
+    document.getElementById('idleState').style.display = 'block';
+    document.getElementById('responseArea').classList.remove('visible');
+    document.getElementById('audioBar').classList.remove('visible');
+    document.getElementById('transcriptArea').style.display = 'none';
+  }
+
+  function setupRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      showToast('Speech recognition not supported in this browser');
+      return null;
+    }
+    const rec = new SpeechRecognition();
+    rec.lang = 'en-US';
+    rec.continuous = false; 
+    rec.interimResults = false;
+
+    rec.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      document.getElementById('userTranscript').textContent = `"${transcript}"`;
+      stopListening();
+      askQuestion(transcript); 
+    };
+
+    rec.onerror = (e) => {
+      stopListening();
+      if (sessionActive && e.error === 'no-speech' && !isOracleSpeaking) {
+        setTimeout(startListening, 500); 
+      } else if (e.error !== 'no-speech') {
+        showToast('Could not hear you — please try again');
+      }
+    };
+
+    rec.onend = () => { 
+      isListening = false;
+      updateMicUI();
+      if (sessionActive && !isOracleSpeaking && !document.getElementById('loadingState').classList.contains('visible')) {
+        startListening();
+      }
+    };
+
+    return rec;
+  }
+
+  function startListening() {
+    if (isOracleSpeaking || !sessionActive) return; 
+    if (!recognition) recognition = setupRecognition();
+    if (!recognition) return;
+    
+    isListening = true;
+    try { recognition.start(); } catch(e){} 
+    updateMicUI();
+    showToast('Listening — speak your question');
+  }
+
+  function stopListening() {
+    isListening = false;
+    if (recognition) recognition.stop();
+    updateMicUI();
+  }
+
+  function updateMicUI() {
+    const transcriptArea = document.getElementById('transcriptArea');
+    const micStatus = document.getElementById('micStatus');
+    
+    if (isListening) {
+      transcriptArea.style.display = 'block';
+      micStatus.textContent = 'Listening...';
+      document.getElementById('userTranscript').textContent = '';
+    } else {
+      micStatus.textContent = 'Oracle is pondering...';
+      if (!sessionActive) transcriptArea.style.display = 'none';
+    }
+  }
+
+  async function askQuestion(questionText) {
+    const question = questionText.trim();
+    if (!question) return;
+
+    showLoading();
+    document.querySelector('.loading-text').textContent = "Consulting the scriptures";
+    stopListening(); 
+
+    try {
+      const response = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+
+      if (!response.ok) throw new Error('Backend error');
+      const data = await response.json();
+
+      showAnswer(question, data.answer, '');
+      
+      // Play the newly generated NVIDIA Magpie audio stream
+      if (data.audio_url) {
+        playAudio(data.audio_url);
+      } else if (sessionActive) {
+        setTimeout(startListening, 1000);
+      }
+
+    } catch (err) {
+      console.error(err);
+      showToast("The Oracle is unreachable.");
+      if(sessionActive) setTimeout(startListening, 2000);
+    }
+  }
+
+  function showLoading() {
+    document.getElementById('idleState').style.display = 'none';
+    document.getElementById('responseArea').classList.remove('visible');
+    document.getElementById('loadingState').classList.add('visible');
+  }
+
+  function showAnswer(question, answer, source) {
+    document.getElementById('idleState').style.display = 'none';
+    document.getElementById('loadingState').classList.remove('visible');
+    
+    document.getElementById('questionDisplay').textContent = question;
+    document.getElementById('answerText').textContent = answer;
+    document.getElementById('answerSource').textContent = source ? `— ${source}` : '';
+    
+    document.getElementById('responseArea').classList.add('visible');
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById('statusToast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // ── Restored Audio Engine ──
+  function playAudio(url) {
+    isOracleSpeaking = true; 
+    const audio = document.getElementById('oracleAudio');
+    audio.src = url;
+    audio.play();
+    document.getElementById('audioBar').classList.add('visible');
+    document.getElementById('playBtn').textContent = '⏸';
+  }
+
+  function toggleAudio() {
+    const audio = document.getElementById('oracleAudio');
+    const btn = document.getElementById('playBtn');
+    if (audio.paused) {
+      audio.play();
+      btn.textContent = '⏸';
+    } else {
+      audio.pause();
+      btn.textContent = '▶';
+    }
+  }
+
+  function updateProgress() {
+    const audio = document.getElementById('oracleAudio');
+    const fill = document.getElementById('audioFill');
+    if (audio.duration) {
+      const pct = (audio.currentTime / audio.duration) * 100;
+      fill.style.width = `${pct}%`;
+    }
+  }
+
+  function onAudioEnd() {
+    isOracleSpeaking = false;
+    document.getElementById('playBtn').textContent = '▶';
+    document.getElementById('audioFill').style.width = '0%';
+    
+    // Only auto-listen if the session is still active AND we aren't in a loading state
+    if (sessionActive && !document.getElementById('loadingState').classList.contains('visible')) {
+      setTimeout(() => {
+        startListening();
+      }, 800); 
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+.env
+hindu_db/
+*.onnx
+*.dll
+*.pyd
+*.pyc
+*.mp3
