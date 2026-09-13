@@ -62,7 +62,7 @@ async def ask_oracle(q: Question):
     try:
         payload = {
             "input": [q.question],
-            "model": "nvidia/nv-embedqa-e5-v5",
+            "model": "nvidia/nemotron-3-embed-1b",
             "input_type": "query",
             "encoding_format": "float",
             "truncate": "END"
@@ -103,7 +103,7 @@ async def ask_oracle(q: Question):
                 {"role": "system", "content": system_persona},
                 {"role": "user", "content": q.question}
             ],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.35,
         )
         reply_text = chat_completion.choices[0].message.content.strip()
@@ -123,13 +123,50 @@ async def ask_oracle(q: Question):
 # ── 4. LIGHTWEIGHT NEURAL VOICE GENERATOR ───────────────────────────
 @app.get("/tts")
 async def stream_audio(text: str):
-    # This bypasses the heavy NVIDIA SDK and uses Microsoft's lightweight neural engine
-    communicate = edge_tts.Communicate(text, "en-IN-PrabhatNeural", rate="-9%")
-    audio_data = b""
-    
-    # Generate the audio in system RAM to avoid hard drive writes
-    async for chunk in communicate.stream():
-        if chunk["type"] == "audio":
-            audio_data += chunk["data"]
-            
-    return StreamingResponse(io.BytesIO(audio_data), media_type="audio/mpeg")
+    elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
+    voice_id = os.getenv("ELEVENLABS_VOICE_ID")
+
+    if not elevenlabs_key or not voice_id:
+        raise HTTPException(
+            status_code=500,
+            detail="ElevenLabs API key or voice ID is missing."
+        )
+
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
+
+    headers = {
+        "xi-api-key": elevenlabs_key,
+        "Content-Type": "application/json",
+        "Accept": "audio/mpeg",
+    }
+
+    payload = {
+        "text": text,
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": {
+            "speed": 1.10,
+            "stability": 0.80,
+            "similarity_boost": 0.80,
+            "style": 0.11,
+            "use_speaker_boost": True,
+        },
+    }
+
+    try:
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=60,
+        )
+        response.raise_for_status()
+        return StreamingResponse(
+            io.BytesIO(response.content),
+            media_type="audio/mpeg",
+        )
+    except requests.RequestException as exc:
+        print(f"ElevenLabs TTS Error: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail="Could not generate Oracle audio."
+        )

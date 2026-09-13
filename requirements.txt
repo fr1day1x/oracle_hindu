@@ -6,3 +6,5 @@ groq
 edge-tts
 pydantic
 python-dotenv
+elevenlabs
+

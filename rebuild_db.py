@@ -57,7 +57,7 @@ for filename in os.listdir(DATA_DIR):
 def query_nvidia(texts):
     payload = {
       "input": texts,
-      "model": "nvidia/nv-embedqa-e5-v5",
+      "model": "nvidia/nemotron-3-embed-1b",
       "input_type": "passage", # CRITICAL: Tags this as database text
       "encoding_format": "float",
       "truncate": "END"
